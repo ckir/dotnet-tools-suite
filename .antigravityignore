@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+TestResults/
+packages/
+node_modules/
+.git/
