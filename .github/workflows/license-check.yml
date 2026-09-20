@@ -1,0 +1,43 @@
+name: License Header Enforcement
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  license-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run PolyForm header check
+        run: |
+          python scripts/polyform_injector.py --check
+        continue-on-error: true
+        id: check
+
+      - name: Show diff of missing headers
+        if: steps.check.outcome == 'failure'
+        run: |
+          git --no-pager diff
+
+      - name: Fail if headers missing
+        if: steps.check.outcome == 'failure'
+        run: |
+          echo "❌ Missing PolyForm license headers detected."
+          exit 1
+
+      - name: Success
+        if: steps.check.outcome == 'success'
+        run: |
+          echo "✔ All files contain PolyForm Noncommercial License 1.0.0 headers."
+

@@ -1,0 +1,16 @@
+// Copyright (c) 2026 Hellen
+// Licensed under the PolyForm Noncommercial License 1.0.0
+
+{
+  "dotnet": "8.0.100",
+  "pwsh-modules": [
+    "Pester",
+    "PlatyPS",
+    "PSDepend"
+  ],
+  "tools": [
+    "gitleaks",
+    "lefthook",
+    "just"
+  ]
+}

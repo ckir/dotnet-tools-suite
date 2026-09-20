@@ -1,0 +1,64 @@
+# .NET build outputs
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Pp]ublish/
+TestResults/
+[Bb]uild[Ll]og/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET tooling / NuGet
+.nuget/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# MSBuild / Roslyn
+*.binlog
+
+# Test coverage
+*.coverage
+*.coveragexml
+coverage*/
+lcov.info
+
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.rsuser
+
+# Python (scripts/polyform_injector.py)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# PowerShell / Pester
+PesterResults*.xml
+*.trx
+
+# GitVersion cache
+.gitversion_cache
+GitVersionConfig.json.bak
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+
+# Temp / local
+*.tmp
+*.bak
+*.log
