@@ -13,13 +13,14 @@ COMMENT_STYLES = {
     ".psm1": "# ",
     ".yml": "# ",
     ".yaml": "# ",
-    ".json": "// ",
     ".md": "<!-- ",
     ".toml": "# ",
     ".xml": "<!-- ",
     ".props": "<!-- ",
     ".targets": "<!-- ",
 }
+# NOTE: .json intentionally excluded — JSON has no comment syntax,
+# so injecting "// ..." headers makes files invalid.
 
 def make_header(ext):
     style = COMMENT_STYLES.get(ext)

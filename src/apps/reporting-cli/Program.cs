@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Hellen
 // Licensed under the PolyForm Noncommercial License 1.0.0
 
+using System;
 using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,10 +14,10 @@ var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("reporti
 
 var root = new RootCommand("reporting-cli root command");
 
-root.SetHandler(() =>
+root.SetAction(_ =>
 {
     logger.LogInformation("reporting-cli is running.");
     Console.WriteLine("reporting-cli executed.");
 });
 
-return await root.InvokeAsync(args);
+return await root.Parse(args).InvokeAsync();

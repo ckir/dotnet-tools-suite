@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Hellen
 // Licensed under the PolyForm Noncommercial License 1.0.0
 
+using System;
 using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,10 +14,10 @@ var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("datasyn
 
 var root = new RootCommand("datasync-cli root command");
 
-root.SetHandler(() =>
+root.SetAction(_ =>
 {
     logger.LogInformation("datasync-cli is running.");
     Console.WriteLine("datasync-cli executed.");
 });
 
-return await root.InvokeAsync(args);
+return await root.Parse(args).InvokeAsync();

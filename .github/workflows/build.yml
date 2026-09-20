@@ -1,4 +1,35 @@
 # Copyright (c) 2026 Hellen
 # Licensed under the PolyForm Noncommercial License 1.0.0
 
-# placeholder for build.yml
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: |
+          dotnet restore src/apps/tooling-cli/tooling-cli.csproj
+          dotnet restore src/apps/datasync-cli/datasync-cli.csproj
+          dotnet restore src/apps/reporting-cli/reporting-cli.csproj
+
+      - name: Build
+        run: |
+          dotnet build src/apps/tooling-cli/tooling-cli.csproj --configuration Release --no-restore
+          dotnet build src/apps/datasync-cli/datasync-cli.csproj --configuration Release --no-restore
+          dotnet build src/apps/reporting-cli/reporting-cli.csproj --configuration Release --no-restore

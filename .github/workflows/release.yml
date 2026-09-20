@@ -1,4 +1,31 @@
 # Copyright (c) 2026 Hellen
 # Licensed under the PolyForm Noncommercial License 1.0.0
 
-# placeholder for release.yml
+name: Release
+
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build Release
+        run: |
+          dotnet build src/apps/tooling-cli/tooling-cli.csproj --configuration Release
+          dotnet build src/apps/datasync-cli/datasync-cli.csproj --configuration Release
+          dotnet build src/apps/reporting-cli/reporting-cli.csproj --configuration Release
+
+      - name: Placeholder
+        run: echo "Release packaging not yet implemented."

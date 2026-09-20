@@ -6,7 +6,7 @@ Licensed under the PolyForm Noncommercial License 1.0.0
 
 # dotnet-tools-suite
 
-A suite of .NET 8 command-line tools and shared libraries.
+A suite of .NET 10 command-line tools and shared libraries.
 
 ## Apps (`src/apps`)
 
@@ -26,7 +26,7 @@ A suite of .NET 8 command-line tools and shared libraries.
 
 ## Prerequisites
 
-Pinned in `perster.json`: .NET SDK `8.0.100`, PowerShell modules
+Pinned in `perster.json`: .NET SDK `10.0.100`, PowerShell modules
 (`Pester`, `PlatyPS`, `PSDepend`), and tools (`just`, `lefthook`,
 `gitleaks`).
 
