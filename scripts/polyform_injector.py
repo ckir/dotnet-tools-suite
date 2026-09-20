@@ -3,7 +3,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-POLYFORM_HEADER = """Copyright (c) 2026 Hellen
+POLYFORM_HEADER = """Copyright (c) 2026 Costas Kirgoussios
 Licensed under the PolyForm Noncommercial License 1.0.0
 """
 
