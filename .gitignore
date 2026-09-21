@@ -62,3 +62,7 @@ desktop.ini
 *.tmp
 *.bak
 *.log
+
+# DocFX
+docs/_site/
+docs/obj/
