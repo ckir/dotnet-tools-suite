@@ -6,7 +6,10 @@ Licensed under the PolyForm Noncommercial License 1.0.0
 
 # dotnet-tools-suite
 
+[![Build](https://github.com/ckir/dotnet-tools-suite/actions/workflows/build.yml/badge.svg)](https://github.com/ckir/dotnet-tools-suite/actions/workflows/build.yml)
 [![Docs](https://github.com/ckir/dotnet-tools-suite/actions/workflows/docs.yml/badge.svg)](https://ckir.github.io/dotnet-tools-suite/)
+[![License Header Enforcement](https://github.com/ckir/dotnet-tools-suite/actions/workflows/license-check.yml/badge.svg)](https://github.com/ckir/dotnet-tools-suite/actions/workflows/license-check.yml)
+[![Release](https://github.com/ckir/dotnet-tools-suite/actions/workflows/release.yml/badge.svg)](https://github.com/ckir/dotnet-tools-suite/actions/workflows/release.yml)
 
 A suite of .NET 10 command-line tools and shared libraries.
 
