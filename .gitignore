@@ -66,3 +66,6 @@ desktop.ini
 # DocFX
 docs/_site/
 docs/obj/
+docs/api/*.yml
+docs/api/toc.yml
+docs/api/.manifest
