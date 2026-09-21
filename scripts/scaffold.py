@@ -370,7 +370,7 @@ def collect_files(cfg: Config) -> dict[str, str]:
             )
     return files
 
-def run(cmd: list, cwd=None):
+def run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
     try:
         return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:
@@ -382,7 +382,7 @@ def run(cmd: list, cwd=None):
         print(f"COMMAND-NOT-FOUND: {cmd[0]}")
         sys.exit(127)
 
-def require_tools(need_gh):
+def require_tools(need_gh: bool) -> None:
     run(["git", "--version"])
     if shutil.which("dotnet") is None:
         print("WARNING: dotnet not found; local builds will be unavailable (scaffolding continues)")
