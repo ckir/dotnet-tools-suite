@@ -6,8 +6,11 @@
 import argparse
 import difflib
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
+import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -367,6 +370,25 @@ def collect_files(cfg: Config) -> dict[str, str]:
             )
     return files
 
+def run(cmd: list, cwd=None):
+    try:
+        return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"COMMAND-FAILED: {' '.join(cmd)} (exit {e.returncode})")
+        print((e.stdout or "")[-2000:])
+        print((e.stderr or "")[-2000:])
+        sys.exit(e.returncode)
+    except FileNotFoundError:
+        print(f"COMMAND-NOT-FOUND: {cmd[0]}")
+        sys.exit(127)
+
+def require_tools(need_gh):
+    run(["git", "--version"])
+    if shutil.which("dotnet") is None:
+        print("WARNING: dotnet not found; local builds will be unavailable (scaffolding continues)")
+    if need_gh:
+        run(["gh", "auth", "status"])
+
 def self_test() -> int:
     if not TEMPLATES:
         print("SELFTEST-FAIL: no templates registered")
@@ -503,7 +525,91 @@ def main() -> int:
     cfg = parse_args()
     if "--self-test" in sys.argv:
         return self_test()
-    print(f"scaffolding {cfg.repo} (templates: {len(TEMPLATES)})")
+
+    # --- Validate tools ---
+    need_gh = not cfg.skip_create
+    require_tools(need_gh)
+
+    # --- Resolve --owner empty via gh ---
+    if not cfg.owner:
+        try:
+            r = subprocess.run(["gh", "api", "user", "--jq", ".login"], capture_output=True, text=True, check=True)
+            cfg.owner = r.stdout.strip().strip('"').strip("'")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("ERROR: --owner is empty and 'gh api user' failed")
+            sys.exit(1)
+    if not cfg.holder:
+        cfg.holder = cfg.owner
+
+    # --- Refuse non-empty --target-dir ---
+    target = Path(cfg.target_dir)
+    if target.exists() and any(target.iterdir()):
+        print("TARGET-NOT-EMPTY: target directory is not empty")
+        sys.exit(2)
+
+    # --- Render and write ---
+    files = collect_files(cfg)
+    print(f"scaffolding {cfg.repo} (templates: {len(files)})")
+    write_tree(target, files)
+
+    # --- Git init and commit ---
+    run(["git", "init", "-b", "main"], cwd=target)
+    run(["git", "add", "-A"], cwd=target)
+    run(["git", "commit", "-m", "feat: initial commit from scaffold"], cwd=target)
+
+    # --- Create/push flow ---
+    owner = cfg.owner
+    repo = cfg.repo
+    if cfg.skip_create:
+        visibility = "--public" if cfg.public else "--private"
+        print(f"gh repo create {owner}/{repo} {visibility} --source {target} --push")
+    else:
+        visibility = "--public" if cfg.public else "--private"
+        run(["gh", "repo", "create", f"{owner}/{repo}", visibility, "--source", str(target), "--push"], cwd=target)
+
+    # --- Verify loop ---
+    if not cfg.skip_verify and not cfg.skip_create:
+        print("\nManual steps to verify:")
+        print(f"  1. Enable GitHub Pages: Settings → Pages → Source = \"GitHub Actions\"")
+        print(f"  2. Check docs workflow: gh run list --workflow=docs.yml --limit 1")
+        print(f"  3. Visit site: https://{owner}.github.io/{repo}/")
+
+        steps = [
+            ("Pages source", f"gh api repos/{owner}/{repo}/pages --jq .build_type", "workflow"),
+            ("Docs run green", f"gh run list --workflow=docs.yml --limit 1 --json conclusion --jq '.[0].conclusion'", "success"),
+            ("Live site", f"https://{owner}.github.io/{repo}/", None),
+        ]
+
+        for name, cmd, expected in steps:
+            while True:
+                print(f"\n--- {name} ---")
+                choice = input("[Enter] to check, 's' to skip: ").strip().lower()
+                if choice == "s":
+                    break
+                if expected is None:
+                    # urllib check for live site
+                    try:
+                        resp = urllib.request.urlopen(cmd, timeout=30)
+                        status = resp.status
+                        if status == 200:
+                            print(f"OK: {status}")
+                            break
+                        else:
+                            print(f"Unexpected status: {status}")
+                    except Exception as e:
+                        print(f"FAILED: {e}")
+                else:
+                    try:
+                        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
+                        actual = r.stdout.strip().strip('"')
+                        if actual == expected:
+                            print(f"OK: {actual}")
+                            break
+                        else:
+                            print(f"Expected '{expected}', got '{actual}'")
+                    except subprocess.CalledProcessError as e:
+                        print(f"FAILED: {e}")
+
     return 0
 
 if __name__ == "__main__":
