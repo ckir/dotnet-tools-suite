@@ -1,0 +1,12 @@
+<!--
+Copyright (c) 2026 Costas Kirgoussios
+Licensed under the PolyForm Noncommercial License 1.0.0
+
+-->
+
+- name: Home
+  href: index.md
+- name: Articles
+  href: articles/toc.yml
+- name: API Reference
+  href: api/index.md

@@ -1,0 +1,51 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "src/apps/tooling-cli/tooling-cli.csproj",
+            "src/apps/datasync-cli/datasync-cli.csproj",
+            "src/apps/reporting-cli/reporting-cli.csproj",
+            "src/libs/shared-kernel/shared-kernel.csproj",
+            "src/libs/logging/logging.csproj",
+            "src/libs/cli-runtime/cli-runtime.csproj"
+          ],
+          "src": ".."
+        }
+      ],
+      "dest": "api",
+      "properties": {
+        "TargetFramework": "net10.0",
+        "Configuration": "Release"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": ["api/*.yml", "api/index.md"]
+      },
+      {
+        "files": ["articles/*.md", "articles/toc.yml", "toc.yml", "*.md"]
+      }
+    ],
+    "resource": [
+      {
+        "files": ["images/**"]
+      }
+    ],
+    "dest": "_site",
+    "globalMetadata": {
+      "_appTitle": "dotnet-tools-suite",
+      "_appBasePath": "/dotnet-tools-suite/",
+      "_enableSearch": true
+    },
+    "template": ["default", "modern"],
+    "sitemap": {
+      "baseUrl": "https://ckir.github.io/dotnet-tools-suite",
+      "changefreq": "weekly",
+      "priority": 0.5
+    }
+  }
+}
