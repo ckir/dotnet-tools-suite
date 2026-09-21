@@ -7,6 +7,7 @@ import argparse
 import difflib
 import os
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -78,6 +79,12 @@ def metadata_files(cfg: Config) -> str:
     entries[-1] = entries[-1].rstrip(",")
     return "\n".join(entries)
 
+def lib_refs(cfg: Config) -> str:
+    return "\n".join(
+        f'    <ProjectReference Include="..\\..\\libs\\{l}\\{l}.csproj" />'
+        for l in cfg.libs
+    )
+
 def _dotnet_sdk_pin(dotnet: str) -> str:
     parts = dotnet.split(".")
     if len(parts) >= 3 and parts[2] != "x":
@@ -136,6 +143,171 @@ TEMPLATES.update({
     "Justfile": "python := \"python3\"\n\ndefault:\n    @just --list\n\nlicense-inject:\n    {{python}} scripts/polyform_injector.py\n\nlicense-check:\n    {{python}} scripts/polyform_injector.py --check\n\npre-commit: license-inject\n\ndocs-install:\n    dotnet tool update -g docfx\n\ndocs-build:\n    docfx docs/docfx.json\n\ndocs-serve:\n    docfx docs/docfx.json --serve\n\n",
 })
 
+# --- Per-app templates (rendered once per app via collect_files) ---
+_APP_TEMPLATES: dict[str, str] = {
+    "src/apps/{{app}}/{{app}}.csproj": '<Project Sdk="Microsoft.NET.Sdk">\n'
+        '  <PropertyGroup>\n'
+        '    <OutputType>Exe</OutputType>\n'
+        '    <TargetFramework>{{dotnet_tfm}}</TargetFramework>\n'
+        '  </PropertyGroup>\n'
+        '  <ItemGroup>\n'
+        '{{lib_refs}}\n'
+        '  </ItemGroup>\n'
+        '  <ItemGroup>\n'
+        '    <PackageReference Include="System.CommandLine" Version="2.0.12" />\n'
+        '    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />\n'
+        '    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.12" />\n'
+        '    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />\n'
+        '  </ItemGroup>\n'
+        '</Project>\n',
+    "src/apps/{{app}}/Program.cs": '// Copyright (c) 2026 {{holder}}\n'
+        '// Licensed under the PolyForm Noncommercial License 1.0.0\n'
+        '\n'
+        'using System;\n'
+        'using System.CommandLine;\n'
+        'using Microsoft.Extensions.Logging;\n'
+        '\n'
+        'var root = new RootCommand("{{app}}");\n'
+        '\n'
+        'root.SetAction(_ =>\n'
+        '{\n'
+        '    Console.WriteLine("{{app}} is running.");\n'
+        '});\n'
+        '\n'
+        'return await root.Parse(args).InvokeAsync();\n',
+}
+
+# --- Per-lib templates (rendered once per lib via collect_files) ---
+_LIB_TEMPLATES: dict[str, str] = {
+    "src/libs/{{lib}}/{{lib}}.csproj": '<Project Sdk="Microsoft.NET.Sdk">\n'
+        '  <PropertyGroup>\n'
+        '    <TargetFramework>{{dotnet_tfm}}</TargetFramework>\n'
+        '  </PropertyGroup>\n'
+        '</Project>\n',
+    "src/libs/{{lib}}/Class1.cs": '// Copyright (c) 2026 {{holder}}\n'
+        '// Licensed under the PolyForm Noncommercial License 1.0.0\n'
+        '\n'
+        'namespace {{namespace}};\n'
+        '\n'
+        'public class Class1\n'
+        '{\n'
+        '}\n',
+}
+
+# --- DocFX templates ---
+_DOCFX_TEMPLATES: dict[str, str] = {
+    "docs/docfx.json": '{\n'
+        '  "metadata": [\n'
+        '    {\n'
+        '      "src": [\n'
+        '        {\n'
+        '          "files": [\n'
+        '{{metadata_files}}\n'
+        '          ],\n'
+        '          "src": ".."\n'
+        '        }\n'
+        '      ],\n'
+        '      "dest": "api",\n'
+        '      "properties": {\n'
+        '        "TargetFramework": "{{dotnet_tfm}}",\n'
+        '        "Configuration": "Release"\n'
+        '      }\n'
+        '    }\n'
+        '  ],\n'
+        '  "build": {\n'
+        '    "content": [\n'
+        '      {\n'
+        '        "files": ["api/*.yml", "api/index.md"]\n'
+        '      },\n'
+        '      {\n'
+        '        "files": ["articles/*.md", "articles/toc.yml", "toc.yml", "*.md"]\n'
+        '      }\n'
+        '    ],\n'
+        '    "resource": [\n'
+        '      {\n'
+        '        "files": ["images/**"]\n'
+        '      }\n'
+        '    ],\n'
+        '    "dest": "_site",\n'
+        '    "globalMetadata": {\n'
+        '      "_appTitle": "{{repo}}",\n'
+        '      "_appBasePath": "/{{repo}}/",\n'
+        '      "_enableSearch": true\n'
+        '    },\n'
+        '    "template": ["default", "modern"],\n'
+        '    "sitemap": {\n'
+        '      "baseUrl": "https://{{owner}}.github.io/{{repo}}",\n'
+        '      "changefreq": "weekly",\n'
+        '      "priority": 0.5\n'
+        '    }\n'
+        '  }\n'
+        '}\n',
+    "docs/index.md": '<!--\n'
+        'Copyright (c) 2026 {{holder}}\n'
+        'Licensed under the PolyForm Noncommercial License 1.0.0\n'
+        '\n'
+        '-->\n'
+        '\n'
+        '---\n'
+        'title: {{repo}}\n'
+        'description: Documentation for the {{repo}} .NET 10 CLI tools and libraries.\n'
+        '---\n'
+        '\n'
+        '# {{repo}}\n'
+        '\n'
+        'A suite of .NET 10 command-line tools and shared libraries.\n'
+        '\n'
+        '- [Articles](articles/intro.md): concepts and guides.\n'
+        '- [API Reference](api/index.md): auto-generated from source and XML doc comments.\n'
+        '\n'
+        '## Projects\n'
+        '\n'
+        '| Area | Projects |\n'
+        '|------|----------|\n'
+        '| Apps | {{readme_apps_row}} |\n'
+        '| Libraries | {{readme_libs_row}} |\n',
+    "docs/toc.yml": '# Copyright (c) 2026 {{holder}}\n'
+        '# Licensed under the PolyForm Noncommercial License 1.0.0\n'
+        '\n'
+        '- name: Home\n'
+        '  href: index.md\n'
+        '- name: Articles\n'
+        '  href: articles/toc.yml\n'
+        '- name: API Reference\n'
+        '  href: api/index.md\n',
+    "docs/api/index.md": '<!--\n'
+        'Copyright (c) 2026 {{holder}}\n'
+        'Licensed under the PolyForm Noncommercial License 1.0.0\n'
+        '\n'
+        '-->\n'
+        '\n'
+        '# API Reference\n'
+        '\n'
+        'Auto-generated from `src/apps/*` and `src/libs/*`. Select a namespace in the table of contents.\n',
+    "docs/articles/toc.yml": '# Copyright (c) 2026 {{holder}}\n'
+        '# Licensed under the PolyForm Noncommercial License 1.0.0\n'
+        '\n'
+        '- name: Introduction\n'
+        '  href: intro.md\n',
+    "docs/articles/intro.md": '<!--\n'
+        'Copyright (c) 2026 {{holder}}\n'
+        'Licensed under the PolyForm Noncommercial License 1.0.0\n'
+        '\n'
+        '-->\n'
+        '\n'
+        '# Introduction\n'
+        '\n'
+        'This site documents `{{repo}}`: three CLI apps ({{readme_apps_row}}) and three libraries ({{readme_libs_row}}).\n'
+        '\n'
+        'API pages are generated from the projects under `src/` and their XML documentation comments. Add `///` doc comments to public APIs to improve the reference.\n',
+    "docs/.nojekyll": "",
+    "docs/images/.gitkeep": "",
+}
+
+# --- Polyform injector (verbatim, no placeholder substitution) ---
+_polyform_src = Path(__file__).resolve().parent / "polyform_injector.py"
+TEMPLATES["scripts/polyform_injector.py"] = _polyform_src.read_text(encoding="utf-8")
+
 def collect_files(cfg: Config) -> dict[str, str]:
     ctx = build_context(cfg)
     # Files copied byte-for-byte (no placeholder substitution).
@@ -154,8 +326,25 @@ def collect_files(cfg: Config) -> dict[str, str]:
             files[rel] = out
         else:
             files[rel] = render(tpl, ctx)
+    # --- Per-app templates ---
+    for a in cfg.apps:
+        app_ctx = ctx | {"app": a, "lib_refs": lib_refs(cfg)}
+        for rel_tpl, tpl in _APP_TEMPLATES.items():
+            rel = render(rel_tpl, app_ctx)
+            files[rel] = render(tpl, app_ctx)
+    # --- Per-lib templates ---
+    for l in cfg.libs:
+        lib_ctx = ctx | {"lib": l, "namespace": l.replace("-", "")}
+        for rel_tpl, tpl in _LIB_TEMPLATES.items():
+            rel = render(rel_tpl, lib_ctx)
+            files[rel] = render(tpl, lib_ctx)
+    # --- DocFX templates ---
+    for rel, tpl in _DOCFX_TEMPLATES.items():
+        files[rel] = render(tpl, ctx)
+    # --- Skip docs/ under --no-docs ---
     if cfg.no_docs:
         files.pop(".github/workflows/docs.yml", None)
+        files = {k: v for k, v in files.items() if not k.startswith("docs/")}
         if ".gitignore" in files:
             files[".gitignore"] = "\n".join(
                 line for line in files[".gitignore"].split("\n")
@@ -215,9 +404,98 @@ def self_test() -> int:
                 print(diff_text)
             except UnicodeEncodeError:
                 pass
+    # --- src/libs/*: zero diff against live ---
+    for l in cfg.libs:
+        for suffix in (".csproj", "/Class1.cs"):
+            if suffix == "/Class1.cs":
+                rel = f"src/libs/{l}/Class1.cs"
+            else:
+                rel = f"src/libs/{l}/{l}{suffix}"
+            live_text = (live_dir / rel).read_text(encoding="utf-8")
+            rendered_text = rendered[rel]
+            diff_text = "".join(difflib.unified_diff(
+                live_text.splitlines(keepends=True),
+                rendered_text.splitlines(keepends=True),
+                fromfile=f"live/{rel}",
+                tofile=f"rendered/{rel}",
+            ))
+            if diff_text:
+                any_diff = True
+                print(f"--- {rel} differs ---")
+                try:
+                    print(diff_text)
+                except UnicodeEncodeError:
+                    pass
+    # --- scripts/polyform_injector.py: byte-identical, no {{...}} sequences ---
+    pf_rel = "scripts/polyform_injector.py"
+    pf_rendered = rendered[pf_rel]
+    if "{{" in pf_rendered:
+        print(f"SELFTEST-FAIL: {pf_rel} contains unresolved placeholders")
+        return 1
+    pf_live = (live_dir / pf_rel).read_text(encoding="utf-8")
+    if pf_rendered != pf_live:
+        any_diff = True
+        print(f"--- {pf_rel} differs ---")
+        diff_text = "".join(difflib.unified_diff(
+            pf_live.splitlines(keepends=True),
+            pf_rendered.splitlines(keepends=True),
+            fromfile=f"live/{pf_rel}",
+            tofile=f"rendered/{pf_rel}",
+        ))
+        try:
+            print(diff_text)
+        except UnicodeEncodeError:
+            pass
+    # --- docs/*: zero diff against live ---
+    for rel, tpl in _DOCFX_TEMPLATES.items():
+        live_path = live_dir / rel
+        if not live_path.exists():
+            any_diff = True
+            print(f"--- {rel} missing in live ---")
+            continue
+        live_text = live_path.read_text(encoding="utf-8")
+        rendered_text = rendered[rel]
+        diff_text = "".join(difflib.unified_diff(
+            live_text.splitlines(keepends=True),
+            rendered_text.splitlines(keepends=True),
+            fromfile=f"live/{rel}",
+            tofile=f"rendered/{rel}",
+        ))
+        if diff_text:
+            any_diff = True
+            print(f"--- {rel} differs ---")
+            try:
+                print(diff_text)
+            except UnicodeEncodeError:
+                pass
+    # --- tooling-cli.csproj allowlist: canonical differs from live by design ---
+    tooling_csproj = "src/apps/tooling-cli/tooling-cli.csproj"
+    tooling_rendered = rendered[tooling_csproj]
+    tooling_live = (live_dir / tooling_csproj).read_text(encoding="utf-8")
+    tooling_diff = "".join(difflib.unified_diff(
+        tooling_live.splitlines(keepends=True),
+        tooling_rendered.splitlines(keepends=True),
+        fromfile=f"live/{tooling_csproj}",
+        tofile=f"rendered/{tooling_csproj}",
+    ))
+    if not tooling_diff:
+        print(f"SELFTEST-FAIL: {tooling_csproj} should differ from canonical template")
+        return 1
+    if "ProjectReference" not in tooling_diff:
+        print(f"SELFTEST-FAIL: {tooling_csproj} diff should contain ProjectReference")
+        return 1
     if any_diff:
         print("SELFTEST-FAIL: differences found")
         return 1
+    # --- Rendered-tree header check ---
+    with tempfile.TemporaryDirectory(prefix="scaffold-") as tmp:
+        tmp_root = Path(tmp)
+        write_tree(tmp_root, rendered)
+        polyform_path = tmp_root / "scripts" / "polyform_injector.py"
+        result = os.system(f'python3 "{polyform_path}" --check')
+        if result != 0:
+            print("SELFTEST-FAIL: header check failed in rendered tree")
+            return 1
     print("SELFTEST-PASS")
     return 0
 
