@@ -6,6 +6,8 @@ Licensed under the PolyForm Noncommercial License 1.0.0
 
 # dotnet-tools-suite
 
+[![Docs](https://github.com/ckir/dotnet-tools-suite/actions/workflows/docs.yml/badge.svg)](https://ckir.github.io/dotnet-tools-suite/)
+
 A suite of .NET 10 command-line tools and shared libraries.
 
 ## Apps (`src/apps`)

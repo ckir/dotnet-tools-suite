@@ -1,0 +1,79 @@
+# Copyright (c) 2026 Costas Kirgoussios
+# Licensed under the PolyForm Noncommercial License 1.0.0
+
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "src/**"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "src/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: |
+          dotnet restore src/apps/tooling-cli/tooling-cli.csproj
+          dotnet restore src/apps/datasync-cli/datasync-cli.csproj
+          dotnet restore src/apps/reporting-cli/reporting-cli.csproj
+
+      - name: Install DocFX
+        run: dotnet tool update -g docfx
+
+      - name: Build docs
+        # NOTE: requires repo Settings -> Pages -> Source = "GitHub Actions" (one-time manual step).
+        # PRs build strictly; main pushes build normally then deploy.
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            docfx docs/docfx.json --warningsAsErrors
+          else
+            docfx docs/docfx.json
+          fi
+
+      - name: Add .nojekyll
+        run: cp docs/.nojekyll docs/_site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

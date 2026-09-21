@@ -11,3 +11,12 @@ license-check:
 
 pre-commit: license-inject
 
+docs-install:
+    dotnet tool update -g docfx
+
+docs-build:
+    docfx docs/docfx.json
+
+docs-serve:
+    docfx docs/docfx.json --serve
+
