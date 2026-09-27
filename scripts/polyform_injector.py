@@ -33,6 +33,36 @@ def make_header(ext):
     else:
         return POLYFORM_HEADER + "\n"
 
+# Directories never scanned (build output, caches, VCS, generated docs).
+SKIP_DIRS = {
+    ".git",
+    "bin",
+    "obj",
+    "artifacts",
+    "TestResults",
+    "_site",
+    ".vs",
+    ".vscode",
+    ".idea",
+    "__pycache__",
+    "node_modules",
+}
+
+
+def is_excluded(path):
+    parts = os.path.relpath(path, ROOT).split(os.sep)
+    if any(p in SKIP_DIRS for p in parts):
+        return True
+    # DocFX generated API metadata (gitignored, never carries headers).
+    if "docs" in parts and "api" in parts:
+        _, ext = os.path.splitext(path)
+        if ext in (".yml", ".yaml"):
+            return True
+        if os.path.basename(path) == ".manifest":
+            return True
+    return False
+
+
 def should_process(path):
     _, ext = os.path.splitext(path)
     return ext in COMMENT_STYLES
@@ -60,8 +90,11 @@ def inject_header(path):
 def check_only():
     missing = []
     for root, dirs, files in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for file in files:
             path = os.path.join(root, file)
+            if is_excluded(path):
+                continue
             if should_process(path):
                 with open(path, "r", encoding="utf8") as f:
                     content = f.read()
@@ -80,8 +113,11 @@ def check_only():
 def walk_and_inject():
     changed = 0
     for root, dirs, files in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for file in files:
             path = os.path.join(root, file)
+            if is_excluded(path):
+                continue
             if should_process(path):
                 if inject_header(path):
                     print(f"Injected header into: {path}")

@@ -31,17 +31,36 @@ A suite of .NET 10 command-line tools and shared libraries.
 
 ## Prerequisites
 
-Pinned in `perster.json`: .NET SDK `10.0.100`, PowerShell modules
-(`Pester`, `PlatyPS`, `PSDepend`), and tools (`just`, `lefthook`,
-`gitleaks`).
+- .NET SDK `10.0.100` or newer 10.0.x (pinned in `global.json`
+  with `rollForward: latestFeature`; also listed in `perster.json`)
+- `just`, `lefthook`, Python 3.x, PowerShell (`pwsh`) for hooks
+- PowerShell modules (`Pester`, `PlatyPS`, `PSDepend`) and tools
+  (`just`, `lefthook`, `gitleaks`) listed in `perster.json`
+- Local .NET tools restore automatically via `just setup`
+  (`docfx`, `GitVersion.Tool`, `CycloneDX`, `ReportGenerator`
+  in `.config/dotnet-tools.json`; `dotnet format` ships with the SDK)
 
 ## Usage
 
 ```sh
-just --list        # show available recipes
-just license-check # verify PolyForm license headers
+just setup          # restore local tools + NuGet packages
+just check          # PR validation: format, license, build, test, pack
+just build          # build solution (Release)
+just test           # run tests with coverage into TestResults/
+just pack           # pack libraries into artifacts/packages/
+just format         # apply dotnet format
+just format-check   # verify formatting without modifying files
+just license-check  # verify PolyForm license headers
 just license-inject # add missing PolyForm license headers
+just docs           # build DocFX site
+just docs-serve     # serve DocFX site locally
+just version        # show GitVersion
+just sbom           # CycloneDX SBOM into artifacts/sbom/ (release only)
 ```
+
+Run `just check` before opening a PR; CI runs the same command.
+Libraries in `src/libs` enable package validation on `pack`.
+Releases are cut from `v*` tags; see [CONTRIBUTING](CONTRIBUTING.md).
 
 ## License
 

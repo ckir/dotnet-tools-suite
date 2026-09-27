@@ -1,4 +1,20 @@
 # Copyright (c) 2026 Costas Kirgoussios
 # Licensed under the PolyForm Noncommercial License 1.0.0
 
-# placeholder Lefthook config
+pre-commit:
+  parallel: true
+  commands:
+    format-check:
+      run: just format-check
+    license-check:
+      run: just license-check
+
+commit-msg:
+  commands:
+    conventional:
+      run: pwsh -NoProfile -NonInteractive -File build/scripts/validate-commit.ps1 {1}
+
+pre-push:
+  commands:
+    check:
+      run: just check

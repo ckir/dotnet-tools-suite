@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/apps/">
+    <Project Path="src/apps/datasync-cli/datasync-cli.csproj" />
+    <Project Path="src/apps/reporting-cli/reporting-cli.csproj" />
+    <Project Path="src/apps/tooling-cli/tooling-cli.csproj" />
+  </Folder>
+  <Folder Name="/src/libs/">
+    <Project Path="src/libs/cli-runtime/cli-runtime.csproj" />
+    <Project Path="src/libs/logging/logging.csproj" />
+    <Project Path="src/libs/shared-kernel/shared-kernel.csproj" />
+  </Folder>
+</Solution>

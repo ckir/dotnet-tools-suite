@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Costas Kirgoussios
+# Licensed under the PolyForm Noncommercial License 1.0.0
+
+# Normalize line endings to LF in the repository; check out native
+# endings on developer machines.
+* text=auto

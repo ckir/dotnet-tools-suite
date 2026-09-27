@@ -22,14 +22,21 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Restore
-        run: |
-          dotnet restore src/apps/tooling-cli/tooling-cli.csproj
-          dotnet restore src/apps/datasync-cli/datasync-cli.csproj
-          dotnet restore src/apps/reporting-cli/reporting-cli.csproj
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
 
-      - name: Build
-        run: |
-          dotnet build src/apps/tooling-cli/tooling-cli.csproj --configuration Release --no-restore
-          dotnet build src/apps/datasync-cli/datasync-cli.csproj --configuration Release --no-restore
-          dotnet build src/apps/reporting-cli/reporting-cli.csproj --configuration Release --no-restore
+      - name: Set up just
+        uses: extractions/setup-just@v2
+
+      - name: Check (format, license, build, test, pack)
+        run: just check
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: TestResults/**
+          if-no-files-found: warn
