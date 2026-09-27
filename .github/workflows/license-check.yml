@@ -23,7 +23,7 @@ jobs:
           python-version: "3.x"
 
       - name: Set up just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v4
 
       - name: Run PolyForm header check
         run: just license-check
