@@ -65,4 +65,5 @@ Docs deploy from `main` via `docs.yml`. Releases are cut from `v*`
 tags (or manual dispatch): version, build, test, pack, SBOM,
 artifacts, then a GitHub Release with generated notes.
 Dependabot (weekly, grouped) covers NuGet, GitHub Actions, and the
-.NET SDK pin in `global.json`.
+.NET SDK pin in `global.json`, and its PRs auto-merge (squash) once
+`just check` passes.

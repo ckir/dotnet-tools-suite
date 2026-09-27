@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Costas Kirgoussios
+# Licensed under the PolyForm Noncommercial License 1.0.0
+
+name: Dependabot auto-merge
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      # No checkout here: with pull_request_target the job runs in the base
+      # context, so PR code is never executed. --auto queues a squash merge
+      # that GitHub performs only after all checks (just check) pass.
+      - name: Enable auto-merge (squash) once checks pass
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
