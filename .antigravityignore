@@ -1,11 +1,40 @@
+# Build outputs
 bin/
 obj/
+artifacts/
+[Pp]ublish/
+
+# IDE / editor
 .vs/
 .vscode/
 .idea/
 *.suo
 *.user
+
+# Test
 TestResults/
+coverage*/
+
+# NuGet / packages
 packages/
+*.nupkg
+*.snupkg
+
+# MSBuild
+*.binlog
+
+# Node
 node_modules/
+
+# DocFX generated site
+docs/_site/
+docs/api/*.yml
+docs/api/.manifest
+
+# Git
 .git/
+
+# Temp / local
+*.log
+*.tmp
+*.bak
