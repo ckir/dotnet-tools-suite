@@ -26,7 +26,9 @@ function Get-Subject {
         }
     }
     if ((Test-Path $InputArg -ErrorAction SilentlyContinue)) {
-        $lines = Get-Content $InputArg | Where-Object { $_ -notmatch '^\s*#' } | Where-Object { $_.Trim() -ne '' }
+        # @( ... ) forces an array: a single-line file would otherwise
+        # come back as a scalar string and $lines[0] would be one char.
+        $lines = @(Get-Content $InputArg | Where-Object { $_ -notmatch '^\s*#' } | Where-Object { $_.Trim() -ne '' })
         if ($lines.Count -eq 0) { return '' }
         return $lines[0].Trim()
     }

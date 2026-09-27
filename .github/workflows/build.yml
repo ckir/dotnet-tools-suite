@@ -30,8 +30,20 @@ jobs:
       - name: Set up just
         uses: extractions/setup-just@v4
 
-      - name: Check (format, license, build, test, pack)
+      - name: Check (format, license, build, test)
         run: just check
+
+      - name: Pack libraries (package validation)
+        run: just pack
+
+      - name: Coverage report (ReportGenerator)
+        if: always()
+        run: |
+          if [ -n "$(find TestResults -name 'coverage.cobertura.xml' 2>/dev/null)" ]; then
+            just coverage-report
+          else
+            echo "No coverage files found (no test projects yet); skipping HTML report."
+          fi
 
       - name: Upload coverage artifact
         if: always()
@@ -39,4 +51,12 @@ jobs:
         with:
           name: coverage
           path: TestResults/**
+          if-no-files-found: warn
+
+      - name: Upload coverage-report artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: artifacts/coverage/**
           if-no-files-found: warn

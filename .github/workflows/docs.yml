@@ -43,7 +43,7 @@ jobs:
         uses: extractions/setup-just@v4
 
       - name: Restore tools and packages
-        run: just setup
+        run: just restore
 
       - name: Build docs
         # NOTE: requires repo Settings -> Pages -> Source = "GitHub Actions" (one-time manual step).

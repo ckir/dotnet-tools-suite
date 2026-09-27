@@ -7,14 +7,21 @@ sbom_dir := "artifacts/sbom"
 default:
     @just --list
 
-# Bootstrap a fresh clone: restore local tools and NuGet packages.
+# Bootstrap a fresh clone: local tools, NuGet packages, and git hooks.
+# Requires lefthook on PATH (see README Prerequisites); fails loudly otherwise.
 setup:
+    just restore
+    just hooks
+
+# Restore local tools and NuGet packages (no git hooks; used by CI).
+restore:
     dotnet tool restore
     dotnet restore {{sln}}
-    @echo "Setup complete. Run 'lefthook install' to enable git hooks."
 
-restore:
-    dotnet restore {{sln}}
+# Install Lefthook git hooks (requires lefthook: https://github.com/evilmartians/lefthook).
+hooks:
+    @echo "Installing git hooks with lefthook..."
+    lefthook install
 
 build:
     dotnet build {{sln}} --configuration {{config}}
@@ -28,8 +35,9 @@ test:
 pack:
     dotnet pack {{sln}} --configuration {{config}} --output {{packages}}
 
-# PR validation: formatting, licenses, build, tests, package validation (via pack).
-check: format-check license-check build test pack
+# Fast correctness checks for normal development and pre-push.
+# Packaging/package validation live in `just pack` (CI and release run both).
+check: format-check license-check build test
 
 format:
     dotnet format {{sln}}

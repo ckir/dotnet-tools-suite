@@ -40,27 +40,32 @@ A suite of .NET 10 command-line tools and shared libraries.
   (`docfx`, `GitVersion.Tool`, `CycloneDX`, `ReportGenerator`
   in `.config/dotnet-tools.json`; `dotnet format` ships with the SDK)
 
-## Usage
+## Quick start
 
 ```sh
-just setup          # restore local tools + NuGet packages
-just check          # PR validation: format, license, build, test, pack
-just build          # build solution (Release)
-just test           # run tests with coverage into TestResults/
-just pack           # pack libraries into artifacts/packages/
-just format         # apply dotnet format
-just format-check   # verify formatting without modifying files
-just license-check  # verify PolyForm license headers
-just license-inject # add missing PolyForm license headers
-just docs           # build DocFX site
-just docs-serve     # serve DocFX site locally
-just version        # show GitVersion
-just sbom           # CycloneDX SBOM into artifacts/sbom/ (release only)
+git clone ... && cd dotnet-tools-suite
+just setup   # restore local tools + NuGet packages, install git hooks
+just check   # format, license, build, test — run before pushing
 ```
 
-Run `just check` before opening a PR; CI runs the same command.
-Libraries in `src/libs` enable package validation on `pack`.
-Releases are cut from `v*` tags; see [CONTRIBUTING](CONTRIBUTING.md).
+`just setup` restores the local .NET tools (`.config/dotnet-tools.json`),
+restores NuGet packages, and installs the Lefthook git hooks, so a fresh
+clone is ready for development. It requires `lefthook` on `PATH` (see
+Prerequisites) and fails loudly if it is missing.
+
+Common commands (all exist — see `just --list`):
+
+```sh
+just build      # build solution (Release)
+just test       # run tests with coverage into TestResults/
+just pack       # pack libraries into artifacts/packages/ (CI/release only)
+just docs-serve # serve the DocFX site locally
+```
+
+CI runs `just check` plus `just pack` and a ReportGenerator coverage
+report. Releases are cut from `v*` tags: packages are generated and
+attached as GitHub Release assets (libraries are not published to
+NuGet.org). See [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## License
 
