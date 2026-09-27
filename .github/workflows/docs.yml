@@ -40,7 +40,7 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Set up just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v4
 
       - name: Restore tools and packages
         run: just setup
@@ -59,7 +59,7 @@ jobs:
         run: cp docs/.nojekyll docs/_site/.nojekyll
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs/_site
 
@@ -73,4 +73,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
