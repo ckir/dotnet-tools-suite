@@ -9,19 +9,19 @@
       ]
     },
     "gitversion.tool": {
-      "version": "6.8.2",
+      "version": "7.0.1",
       "commands": [
         "dotnet-gitversion"
       ]
     },
     "cyclonedx": {
-      "version": "6.3.1",
+      "version": "6.3.2",
       "commands": [
         "dotnet-CycloneDX"
       ]
     },
     "dotnet-reportgenerator-globaltool": {
-      "version": "5.6.0",
+      "version": "5.6.1",
       "commands": [
         "reportgenerator"
       ]
